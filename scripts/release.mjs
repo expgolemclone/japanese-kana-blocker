@@ -5,6 +5,8 @@ import path from "node:path";
 
 const SHA_PATTERN = /^[0-9a-f]{40}$/;
 const VERSION_PATTERN = /^\d+\.\d+\.\d+$/;
+const WINDOWS_CMD_SAFE_PATTERN = /^[A-Za-z0-9_./:@=-]+$/;
+const WINDOWS_WRAPPER_COMMANDS = new Set(["jj"]);
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const PROJECT_ROOT = path.resolve(path.dirname(SCRIPT_PATH), "..");
 const RELEASE_ASSET = "block-japanese-kana.user.js";
@@ -17,12 +19,33 @@ function formatCommand(command, args) {
     .join(" ");
 }
 
+function resolveInvocation(command, args, platform, commandShell) {
+  if (platform !== "win32" || !WINDOWS_WRAPPER_COMMANDS.has(command)) {
+    return { args, executable: command };
+  }
+  if (!commandShell) {
+    throw new ReleaseError("ComSpec is required to execute Windows command wrappers");
+  }
+  const commandParts = [command, ...args];
+  const unsafePart = commandParts.find((part) => !WINDOWS_CMD_SAFE_PATTERN.test(part));
+  if (unsafePart !== undefined) {
+    throw new ReleaseError(`Unsafe Windows command-wrapper argument was rejected: ${unsafePart}`);
+  }
+  return {
+    args: ["/d", "/s", "/c", commandParts.join(" ")],
+    executable: commandShell,
+  };
+}
+
 export function createCommandRunner({
   cwd = PROJECT_ROOT,
+  platform = process.platform,
+  commandShell = process.env.ComSpec,
   spawnSyncImpl = spawnSync,
 } = {}) {
   return (command, args = [], { capture = false } = {}) => {
-    const result = spawnSyncImpl(command, args, {
+    const invocation = resolveInvocation(command, args, platform, commandShell);
+    const result = spawnSyncImpl(invocation.executable, invocation.args, {
       cwd,
       encoding: "utf8",
       stdio: capture ? ["ignore", "pipe", "pipe"] : "inherit",

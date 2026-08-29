@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { ReleaseError, readUserscriptVersion, runRelease } from "../scripts/release.mjs";
+import {
+  ReleaseError,
+  createCommandRunner,
+  readUserscriptVersion,
+  runRelease,
+} from "../scripts/release.mjs";
 
 const SHA = "1234567890abcdef1234567890abcdef12345678";
 
@@ -17,6 +22,31 @@ test("rejects missing, duplicate, and non-semantic userscript versions", () => {
   ]) {
     assert.throws(() => readUserscriptVersion(source), ReleaseError);
   }
+});
+
+test("runs the Windows jj command wrapper through ComSpec", () => {
+  const invocations = [];
+  const runCommand = createCommandRunner({
+    commandShell: "C:\\Windows\\System32\\cmd.exe",
+    platform: "win32",
+    spawnSyncImpl(executable, args) {
+      invocations.push({ args, executable });
+      return { status: 0, stdout: "" };
+    },
+  });
+
+  runCommand("jj", ["log", "--no-graph", "-r", "main@origin", "-T", "commit_id"]);
+  assert.deepEqual(invocations, [
+    {
+      executable: "C:\\Windows\\System32\\cmd.exe",
+      args: [
+        "/d",
+        "/s",
+        "/c",
+        "jj log --no-graph -r main@origin -T commit_id",
+      ],
+    },
+  ]);
 });
 
 test("publishes a versioned asset only after synchronized private main validation", () => {
