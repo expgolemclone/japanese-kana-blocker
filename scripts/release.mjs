@@ -117,7 +117,7 @@ function readOriginUrl(runCommand) {
   return origins[0].slice("origin ".length).trim();
 }
 
-function assertSynchronizedPrivateMain(runCommand) {
+function assertSynchronizedPublicMain(runCommand) {
   runCommand("jj", ["git", "fetch", "--remote", "origin"]);
 
   const workingCopyDiff = runCommand(
@@ -147,8 +147,8 @@ function assertSynchronizedPrivateMain(runCommand) {
   if (repository.defaultBranchRef?.name !== "main") {
     throw new ReleaseError("The GitHub repository default branch must be main");
   }
-  if (repository.isPrivate !== true) {
-    throw new ReleaseError("The GitHub repository must be private");
+  if (repository.isPrivate !== false) {
+    throw new ReleaseError("The GitHub repository must be public");
   }
 
   const githubMainSha = parseSha(
@@ -171,7 +171,7 @@ export function runRelease({
   runCommand = createCommandRunner(),
   logger = console.log,
 } = {}) {
-  logger("Checking release prerequisites and synchronized private main state");
+  logger("Checking release prerequisites and synchronized public main state");
   runCommand("jj", ["--version"]);
   runCommand("gh", ["--version"]);
   runCommand("gh", ["auth", "status", "--hostname", "github.com"]);
@@ -189,7 +189,7 @@ export function runRelease({
     );
   }
 
-  const { mainSha, repository } = assertSynchronizedPrivateMain(runCommand);
+  const { mainSha, repository } = assertSynchronizedPublicMain(runCommand);
   const releases = parseJson(
     runCommand(
       "gh",

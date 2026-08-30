@@ -49,7 +49,7 @@ test("runs the Windows jj command wrapper through ComSpec", () => {
   ]);
 });
 
-test("publishes a versioned asset only after synchronized private main validation", () => {
+test("publishes a versioned asset only after synchronized public main validation", () => {
   const calls = [];
   const responses = new Map([
     ["jj diff --from main --to @ --summary", ""],
@@ -60,7 +60,7 @@ test("publishes a versioned asset only after synchronized private main validatio
       "gh repo view https://github.com/expgolemclone/japanese-kana-blocker.git --json nameWithOwner,url,defaultBranchRef,isPrivate",
       JSON.stringify({
         defaultBranchRef: { name: "main" },
-        isPrivate: true,
+        isPrivate: false,
         nameWithOwner: "expgolemclone/japanese-kana-blocker",
         url: "https://github.com/expgolemclone/japanese-kana-blocker",
       }),
@@ -94,7 +94,7 @@ test("publishes a versioned asset only after synchronized private main validatio
   assert.equal(calls.at(-1), "jj git fetch --remote origin");
 });
 
-test("rejects a public repository", () => {
+test("rejects a private repository", () => {
   const runCommand = (command, args = []) => {
     const invocation = [command, ...args].join(" ");
     if (invocation === "jj diff --from main --to @ --summary") return "";
@@ -105,7 +105,7 @@ test("rejects a public repository", () => {
     if (invocation.startsWith("gh repo view")) {
       return JSON.stringify({
         defaultBranchRef: { name: "main" },
-        isPrivate: false,
+        isPrivate: true,
         nameWithOwner: "expgolemclone/japanese-kana-blocker",
       });
     }
@@ -118,6 +118,6 @@ test("rejects a public repository", () => {
 
   assert.throws(
     () => runRelease({ logger() {}, readFile, runCommand }),
-    /repository must be private/,
+    /repository must be public/,
   );
 });

@@ -17,6 +17,9 @@ test("allowed hosts are excluded", () => {
   }
 });
 
-test("private repository metadata does not expose unusable raw update URLs", () => {
-  assert.doesNotMatch(source, /^\/\/ @(downloadURL|updateURL)\b/m);
+test("public repository metadata uses stable raw update URLs", () => {
+  const updateUrl =
+    "https://raw.githubusercontent.com/expgolemclone/japanese-kana-blocker/main/block-japanese-kana.user.js";
+  assert.ok(source.split(/\r?\n/).includes(`// @updateURL    ${updateUrl}`));
+  assert.ok(source.split(/\r?\n/).includes(`// @downloadURL  ${updateUrl}`));
 });
