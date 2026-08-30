@@ -25,6 +25,7 @@
 - `kakomonn.com`
 - `chatgpt.com`
 - `github.com`
+- `pornhub.com`
 - `amazon.*`
 - `aniwaves.*`
 - `myna.go.jp`

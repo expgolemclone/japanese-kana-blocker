@@ -4,12 +4,14 @@ import test from "node:test";
 
 const source = await readFile(new URL("../block-japanese-kana.user.js", import.meta.url), "utf8");
 
-test("wildcard Amazon and Aniwaves hosts are excluded", () => {
+test("allowed hosts are excluded", () => {
   for (const pattern of [
     "*://amazon.*/*",
     "*://*.amazon.*/*",
     "*://aniwaves.*/*",
     "*://*.aniwaves.*/*",
+    "*://pornhub.com/*",
+    "*://*.pornhub.com/*",
   ]) {
     assert.match(source, new RegExp(`^// @exclude\\s+${pattern.replaceAll("*", "\\*")}\\s*$`, "m"));
   }
