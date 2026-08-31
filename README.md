@@ -24,6 +24,7 @@
 
 - `kakomonn.com`
 - `chatgpt.com`
+- `youtube.com`
 - `github.com`
 - `pornhub.com`
 - `amazon.*`

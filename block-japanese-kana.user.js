@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Japanese Kana Blocker
 // @namespace    https://github.com/expgolemclone/japanese-kana-blocker
-// @version      1.3.0
+// @version      1.3.1
 // @description  Blocks pages containing hiragana or katakana outside approved sites.
 // @homepageURL  https://github.com/expgolemclone/japanese-kana-blocker
 // @supportURL   https://github.com/expgolemclone/japanese-kana-blocker/issues
@@ -16,6 +16,8 @@
 // @exclude      *://*.kakomonn.com/*
 // @exclude      *://chatgpt.com/*
 // @exclude      *://*.chatgpt.com/*
+// @exclude      *://youtube.com/*
+// @exclude      *://*.youtube.com/*
 // @exclude      *://github.com/*
 // @exclude      *://*.github.com/*
 // @exclude      *://pornhub.com/*

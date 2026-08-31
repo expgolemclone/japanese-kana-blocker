@@ -10,6 +10,10 @@ test("allowed hosts are excluded", () => {
     "*://*.amazon.*/*",
     "*://aniwaves.*/*",
     "*://*.aniwaves.*/*",
+    "*://chatgpt.com/*",
+    "*://*.chatgpt.com/*",
+    "*://youtube.com/*",
+    "*://*.youtube.com/*",
     "*://pornhub.com/*",
     "*://*.pornhub.com/*",
   ]) {
