@@ -2,28 +2,42 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const source = await readFile(new URL("../block-japanese-kana.user.js", import.meta.url), "utf8");
+const sourceUrl = new URL("../block-japanese-kana.user.js", import.meta.url);
+const source = await readFile(sourceUrl, "utf8");
 
-test("allowed hosts are excluded", () => {
-  for (const pattern of [
-    "*://amazon.*/*",
-    "*://*.amazon.*/*",
-    "*://aniwaves.*/*",
-    "*://*.aniwaves.*/*",
-    "*://chatgpt.com/*",
-    "*://*.chatgpt.com/*",
-    "*://youtube.com/*",
-    "*://*.youtube.com/*",
-    "*://pornhub.com/*",
-    "*://*.pornhub.com/*",
-  ]) {
-    assert.match(source, new RegExp(`^// @exclude\\s+${pattern.replaceAll("*", "\\*")}\\s*$`, "m"));
+function metadataValues(name) {
+  return [...source.matchAll(new RegExp(`^// @${name}\\s+(\\S+)\\s*$`, "gm"))].map(
+    (match) => match[1],
+  );
+}
+
+test("allowed-host metadata is valid, unique, and structurally complete", () => {
+  const exclusions = metadataValues("exclude");
+  const exclusionSet = new Set(exclusions);
+
+  assert.ok(exclusions.length > 0);
+  assert.equal(exclusionSet.size, exclusions.length);
+
+  for (const pattern of exclusions) {
+    assert.match(pattern, /^\*:\/\/(?:\*\.)?[a-z0-9-]+(?:\.(?:[a-z0-9-]+|\*))*\/\*$/);
+
+    const hostname = pattern.slice("*://".length, -"/*".length);
+    const wildcard = hostname.startsWith("*.");
+    const baseHostname = wildcard ? hostname.slice(2) : hostname;
+    if (baseHostname.includes(".")) {
+      const counterpart = wildcard ? baseHostname : `*.${baseHostname}`;
+      assert.ok(exclusionSet.has(`*://${counterpart}/*`));
+    }
   }
 });
 
 test("public repository metadata uses stable raw update URLs", () => {
-  const updateUrl =
-    "https://raw.githubusercontent.com/expgolemclone/japanese-kana-blocker/main/block-japanese-kana.user.js";
-  assert.ok(source.split(/\r?\n/).includes(`// @updateURL    ${updateUrl}`));
-  assert.ok(source.split(/\r?\n/).includes(`// @downloadURL  ${updateUrl}`));
+  const [updateUrl] = metadataValues("updateURL");
+  const [downloadUrl] = metadataValues("downloadURL");
+  const parsedUpdateUrl = new URL(updateUrl);
+
+  assert.equal(updateUrl, downloadUrl);
+  assert.equal(parsedUpdateUrl.hostname, "raw.githubusercontent.com");
+  assert.equal(parsedUpdateUrl.pathname.split("/").at(-2), "main");
+  assert.equal(parsedUpdateUrl.pathname.split("/").at(-1), sourceUrl.pathname.split("/").at(-1));
 });

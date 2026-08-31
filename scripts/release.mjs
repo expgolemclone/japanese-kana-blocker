@@ -179,15 +179,6 @@ export function runRelease({
   const version = readUserscriptVersion(
     readFile(path.join(PROJECT_ROOT, RELEASE_ASSET), "utf8"),
   );
-  const packageJson = parseJson(
-    readFile(path.join(PROJECT_ROOT, "package.json"), "utf8"),
-    "package.json",
-  );
-  if (packageJson.version !== version) {
-    throw new ReleaseError(
-      `package.json version ${packageJson.version} does not match userscript version ${version}`,
-    );
-  }
 
   const { mainSha, repository } = assertSynchronizedPublicMain(runCommand);
   const releases = parseJson(

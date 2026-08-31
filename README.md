@@ -5,7 +5,7 @@
 ## Install
 
 1. Tampermonkeyをインストールします.
-2. [userscript](https://raw.githubusercontent.com/expgolemclone/japanese-kana-blocker/main/block-japanese-kana.user.js)を開き, Tampermonkeyへinstallします.
+2. [userscript](block-japanese-kana.user.js?raw=1)を開き, Tampermonkeyへinstallします.
 3. Tampermonkeyのuserscript自動更新を有効にします. 更新確認周期はTampermonkeyのglobal設定で管理されます.
 
 ## Behavior
@@ -20,20 +20,7 @@
 
 ## Allowed sites
 
-次の本体ホストと全サブドメインを許可します.
-
-- `kakomonn.com`
-- `chatgpt.com`
-- `youtube.com`
-- `github.com`
-- `pornhub.com`
-- `amazon.*`
-- `aniwaves.*`
-- `myna.go.jp`
-- `kojinbango-card.go.jp`
-- `digital.go.jp`
-
-許可サイトはuserscriptの`@exclude`で管理します.
+許可サイトはuserscript metadataの`@exclude`だけで管理します.
 
 ## Release
 

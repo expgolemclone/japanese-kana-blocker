@@ -9,16 +9,22 @@ import {
 } from "../scripts/release.mjs";
 
 const SHA = "1234567890abcdef1234567890abcdef12345678";
+const REPOSITORY = "example/kana-blocker";
+const REPOSITORY_URL = `https://github.com/${REPOSITORY}`;
+const RELEASE_VERSION = "1.1.0";
+const RELEASE_TAG = `v${RELEASE_VERSION}`;
+const USERSCRIPT_SOURCE = `// @version ${RELEASE_VERSION}\n`;
 
 test("reads one semantic userscript version", () => {
-  assert.equal(readUserscriptVersion("// @version      1.2.3\n"), "1.2.3");
+  const version = "1.2.3";
+  assert.equal(readUserscriptVersion(`// @version      ${version}\n`), version);
 });
 
 test("rejects missing, duplicate, and non-semantic userscript versions", () => {
   for (const source of [
     "",
     "// @version next\n",
-    "// @version 1.2.3\n// @version 1.2.4\n",
+    "// @version 1.2.3\n// @version 2.0.0\n",
   ]) {
     assert.throws(() => readUserscriptVersion(source), ReleaseError);
   }
@@ -55,19 +61,19 @@ test("publishes a versioned asset only after synchronized public main validation
     ["jj diff --from main --to @ --summary", ""],
     ["jj log --no-graph -r main -T commit_id", SHA],
     ["jj log --no-graph -r main@origin -T commit_id", SHA],
-    ["jj git remote list", "origin https://github.com/expgolemclone/japanese-kana-blocker.git"],
+    ["jj git remote list", `origin ${REPOSITORY_URL}.git`],
     [
-      "gh repo view https://github.com/expgolemclone/japanese-kana-blocker.git --json nameWithOwner,url,defaultBranchRef,isPrivate",
+      `gh repo view ${REPOSITORY_URL}.git --json nameWithOwner,url,defaultBranchRef,isPrivate`,
       JSON.stringify({
         defaultBranchRef: { name: "main" },
         isPrivate: false,
-        nameWithOwner: "expgolemclone/japanese-kana-blocker",
-        url: "https://github.com/expgolemclone/japanese-kana-blocker",
+        nameWithOwner: REPOSITORY,
+        url: REPOSITORY_URL,
       }),
     ],
-    ["gh api repos/expgolemclone/japanese-kana-blocker/commits/main --jq .sha", SHA],
+    [`gh api repos/${REPOSITORY}/commits/main --jq .sha`, SHA],
     [
-      "gh release list --repo expgolemclone/japanese-kana-blocker --limit 100 --json tagName",
+      `gh release list --repo ${REPOSITORY} --limit 100 --json tagName`,
       '[{"tagName":"v1.0.0"}]',
     ],
   ]);
@@ -76,18 +82,15 @@ test("publishes a versioned asset only after synchronized public main validation
     calls.push(invocation);
     return responses.get(invocation) ?? "";
   };
-  const readFile = (filePath) =>
-    filePath.endsWith("package.json")
-      ? '{"version":"1.1.0"}'
-      : "// @version 1.1.0\n";
+  const readFile = () => USERSCRIPT_SOURCE;
 
   assert.deepEqual(runRelease({ logger() {}, readFile, runCommand }), {
     mainSha: SHA,
-    tagName: "v1.1.0",
+    tagName: RELEASE_TAG,
   });
   assert.ok(
     calls.includes(
-      `gh release create v1.1.0 block-japanese-kana.user.js --repo expgolemclone/japanese-kana-blocker --target ${SHA} --title Japanese Kana Blocker v1.1.0 --generate-notes --latest`,
+      `gh release create ${RELEASE_TAG} block-japanese-kana.user.js --repo ${REPOSITORY} --target ${SHA} --title Japanese Kana Blocker ${RELEASE_TAG} --generate-notes --latest`,
     ),
   );
   assert.equal(calls.some((call) => call.startsWith("jj git push")), false);
@@ -100,21 +103,18 @@ test("rejects a private repository", () => {
     if (invocation === "jj diff --from main --to @ --summary") return "";
     if (invocation.startsWith("jj log --no-graph")) return SHA;
     if (invocation === "jj git remote list") {
-      return "origin https://github.com/expgolemclone/japanese-kana-blocker.git";
+      return `origin ${REPOSITORY_URL}.git`;
     }
     if (invocation.startsWith("gh repo view")) {
       return JSON.stringify({
         defaultBranchRef: { name: "main" },
         isPrivate: true,
-        nameWithOwner: "expgolemclone/japanese-kana-blocker",
+        nameWithOwner: REPOSITORY,
       });
     }
     return "";
   };
-  const readFile = (filePath) =>
-    filePath.endsWith("package.json")
-      ? '{"version":"1.1.0"}'
-      : "// @version 1.1.0\n";
+  const readFile = () => USERSCRIPT_SOURCE;
 
   assert.throws(
     () => runRelease({ logger() {}, readFile, runCommand }),
